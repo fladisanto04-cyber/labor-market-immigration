@@ -1,1103 +1,597 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full select-none">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Labor Market Economics Case Study Poll</title>
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Canvas Confetti CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <!-- FontAwesome Icons CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Plus Jakarta Sans', 'Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#f0f3ff',
-                            100: '#e0e7ff',
-                            500: '#6366f1',
-                            600: '#4f46e5',
-                            700: '#4338ca',
-                            900: '#1e1b4b',
-                            950: '#0f172a'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0b0f19;
-            background-image: 
-                radial-gradient(circle at 15% 15%, rgba(79, 70, 229, 0.12) 0%, transparent 40%),
-                radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.08) 0%, transparent 45%),
-                radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.8) 0%, transparent 100%);
-        }
-
-        .font-display {
-            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
-        }
-
-        .academic-card {
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.25s ease-in-out;
-        }
-
-        .vote-card-btn {
-            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .vote-card-btn:hover {
-            transform: translateY(-2px);
-        }
-        .vote-card-btn:active {
-            transform: translateY(1px);
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .pulse-timer {
-            animation: timerAlert 0.8s infinite alternate;
-        }
-        @keyframes timerAlert {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(1.05); color: #f43f5e; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EconLab - Interactive Case Study</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .delta-badge { transition: all 0.3s ease; }
+    .step-card { transition: all 0.2s ease; }
+    .step-card.active { border-color: #6366f1; background-color: rgba(99, 102, 241, 0.05); }
+  </style>
 </head>
-<body class="h-full text-slate-100 flex flex-col min-h-screen antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
 
-    <!-- Top Application Header -->
-    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-50 px-4 py-3 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
-            
-            <!-- Brand -->
-            <div class="flex items-center gap-3">
-                <div class="bg-indigo-600 text-white px-3 py-1.5 rounded-xl font-display font-extrabold text-sm tracking-wide shadow-md flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-indigo-200"></i>
-                    <span>EconLab</span>
-                </div>
-            </div>
+  <!-- TOP HEADER BAR -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+      <div class="bg-indigo-600 text-white font-black px-3 py-1.5 rounded-lg tracking-wider text-sm">ECONLAB</div>
+    </div>
+    
+    <!-- View Switcher (Hidden in student mode via hash) -->
+    <div id="viewToggleContainer" class="flex bg-slate-800 p-1 rounded-lg text-xs font-semibold">
+      <button id="btnPresenter" onclick="setView('presenter')" class="px-4 py-1.5 rounded-md bg-indigo-600 text-white shadow transition">Presenter View</button>
+      <button id="btnStudent" onclick="setView('student')" class="px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition">Student View</button>
+    </div>
+  </header>
 
-            <!-- Game PIN & View Switcher Controls -->
-            <div class="flex items-center gap-3">
-                
-                <!-- Game PIN Badge -->
-                <div class="hidden sm:flex items-center gap-2 bg-slate-800/90 border border-slate-700 px-3 py-1 rounded-lg text-xs">
-                    <span class="text-slate-400 font-medium">Session ID:</span>
-                    <span class="font-mono font-bold text-indigo-400" id="sessionPinDisplay">ECON-849</span>
-                </div>
+  <!-- MAIN CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 gap-6">
 
-                <!-- Mode Switcher Buttons -->
-                <div class="bg-slate-950 p-1 rounded-xl flex border border-slate-800 shadow-inner">
-                    <button id="btnPresenterMode" onclick="switchView('presenter')" class="px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-desktop"></i> <span class="hidden md:inline">Presenter View</span>
-                    </button>
-                    <button id="btnStudentMode" onclick="switchView('student')" class="px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5">
-                        <i class="fa-solid fa-mobile-screen-button"></i> <span class="hidden md:inline">Student View</span>
-                    </button>
-                </div>
-
-                <!-- Fullscreen Toggle -->
-                <button onclick="toggleFullscreen()" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl border border-slate-700 text-slate-300 text-xs transition" title="Toggle Fullscreen">
-                    <i class="fa-solid fa-expand"></i>
-                </button>
-            </div>
+    <!-- ========================================== -->
+    <!-- PRESENTER VIEW                             -->
+    <!-- ========================================== -->
+    <div id="presenterContainer" class="space-y-6">
+      
+      <!-- Round Navigation Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900/60 border border-slate-800 p-4 rounded-xl">
+        <div class="flex gap-2">
+          <button onclick="setRound(0)" id="roundBtn0" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-indigo-600 text-white">Round 1</button>
+          <button onclick="setRound(1)" id="roundBtn1" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-slate-400 hover:text-white">Round 2</button>
+          <button onclick="setRound(2)" id="roundBtn2" class="px-4 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-slate-400 hover:text-white">Round 3</button>
         </div>
-    </header>
 
-    <!-- PRESENTER MAIN CONTAINER -->
-    <main id="presenterContainer" class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-5 relative z-10">
+        <div class="flex items-center gap-3">
+          <!-- Timer Display -->
+          <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 font-mono text-sm">
+            <span class="text-slate-400">⏱️</span>
+            <span id="timerDisplay" class="font-bold text-indigo-400">00:20</span>
+            <button id="btnTimerToggle" onclick="toggleTimer()" class="ml-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Start</button>
+            <button onclick="resetStepTimer()" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded">Reset</button>
+          </div>
+
+          <!-- Quick Simulation Button -->
+          <button onclick="simulateVotes()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition">
+            ⚡ Simulate Votes (~25)
+          </button>
+        </div>
+      </div>
+
+      <!-- Step Timeline Progress -->
+      <div class="grid grid-cols-5 gap-2 text-center text-xs">
+        <div id="stepCard0" onclick="setStep(0)" class="step-card active cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900">
+          <div class="font-bold text-indigo-400 mb-0.5">1. Vote 1</div>
+          <div class="text-slate-400 text-[10px]">Initial Opinion</div>
+        </div>
+        <div id="stepCard1" onclick="setStep(1)" class="step-card cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900">
+          <div class="font-bold text-slate-400 mb-0.5">2. Reaction</div>
+          <div class="text-slate-400 text-[10px]">Ask 1 Volunteer</div>
+        </div>
+        <div id="stepCard2" onclick="setStep(2)" class="step-card cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900">
+          <div class="font-bold text-slate-400 mb-0.5">3. New Detail</div>
+          <div class="text-slate-400 text-[10px]">Reveal Info</div>
+        </div>
+        <div id="stepCard3" onclick="setStep(3)" class="step-card cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900">
+          <div class="font-bold text-slate-400 mb-0.5">4. Vote 2</div>
+          <div class="text-slate-400 text-[10px]">Re-evaluation</div>
+        </div>
+        <div id="stepCard4" onclick="setStep(4)" class="step-card cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900">
+          <div class="font-bold text-slate-400 mb-0.5">5. Authors</div>
+          <div class="text-slate-400 text-[10px]">Theoretical Shift</div>
+        </div>
+      </div>
+
+      <!-- MAIN CONTENT DISPLAY GRID -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Scenario Context Banner -->
-        <div class="academic-card rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 border-l-4 border-l-indigo-500 shadow-lg">
-            <div class="flex items-center gap-3.5">
-                <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg font-bold">
-                    <i class="fa-solid fa-utensils"></i>
-                </div>
-                <div>
-                    <h2 class="font-display text-sm md:text-base font-bold text-white leading-snug">
-                        Case Example: A Fictional Restaurant Hiring Immigrant Workers
-                    </h2>
-                    <p class="text-xs text-slate-400">
-                        Details are invented to explore economic arguments • <strong class="text-slate-200">Goal:</strong> Evaluate how additional details change your perspective!
-                    </p>
-                </div>
-            </div>
+        <!-- LEFT COLUMN: Statements & Details -->
+        <div class="lg:col-span-7 space-y-6">
+          
+          <!-- Base Statement Box -->
+          <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl relative overflow-hidden">
+            <div class="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-2" id="roundTitleHeader">Round 1 Statement</div>
+            <h2 id="statementText" class="text-xl md:text-2xl font-bold text-white leading-snug">
+              "If hiring immigrant workers helps a restaurant expand and create more jobs, it is a positive outcome for everyone working there."
+            </h2>
+          </div>
 
-            <!-- Round Tabs Navigation -->
-            <div class="flex items-center gap-1.5 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800">
-                <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-2">Rounds:</span>
-                <button onclick="jumpToRound(0)" id="roundTab0" class="px-3 py-1 rounded-lg font-bold text-xs transition bg-indigo-600 text-white shadow">Round 1</button>
-                <button onclick="jumpToRound(1)" id="roundTab1" class="px-3 py-1 rounded-lg font-bold text-xs transition text-slate-400 hover:text-white">Round 2</button>
-                <button onclick="jumpToRound(2)" id="roundTab2" class="px-3 py-1 rounded-lg font-bold text-xs transition text-slate-400 hover:text-white">Round 3</button>
-                <button onclick="jumpToRound(3)" id="roundTab3" class="px-3 py-1 rounded-lg font-bold text-xs transition text-amber-400 hover:text-amber-300" title="Final Synthesis">🏁 Synthesis</button>
-            </div>
-        </div>
-
-        <!-- Presenter Step Controller Bar -->
-        <div class="bg-slate-900/90 border border-slate-800 p-3.5 rounded-2xl shadow-xl flex flex-wrap items-center justify-between gap-3">
-            
-            <!-- Step Progress Indicators -->
-            <div class="flex items-center gap-1.5 flex-wrap" id="stepIndicatorContainer">
-                <!-- Injected dynamically via JS -->
-            </div>
-
-            <!-- Timer & Controls -->
-            <div class="flex items-center flex-wrap gap-2">
-                
-                <!-- Timer Display -->
-                <div class="flex items-center bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
-                    <button onclick="toggleTimer()" id="btnTimerToggle" class="px-3 py-1.5 text-xs font-bold text-indigo-400 hover:bg-slate-800 transition flex items-center gap-2 border-r border-slate-800">
-                        <i class="fa-solid fa-stopwatch text-sm"></i>
-                        <span id="timerDisplay" class="font-mono text-sm font-extrabold text-white">00:20</span>
-                    </button>
-                    <button onclick="resetStepTimer()" class="px-2.5 py-1.5 text-xs text-slate-400 hover:text-white hover:bg-slate-800 transition" title="Reset Step Timer">
-                        <i class="fa-solid fa-rotate-right"></i>
-                    </button>
-                </div>
-
-                <!-- Audience Vote Simulator -->
-                <button onclick="simulateClassVotes()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3.5 py-2 rounded-xl text-xs border border-indigo-400/30 shadow transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-users"></i> Simulate Class Votes (~25)
-                </button>
-
-                <!-- Navigation Controls -->
-                <button onclick="prevStep()" id="btnPrevStep" class="bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold border border-slate-700 transition">
-                    <i class="fa-solid fa-chevron-left mr-1"></i> Previous
-                </button>
-                <button onclick="nextStep()" id="btnNextStep" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-xl text-xs border border-emerald-400/30 shadow-lg transition flex items-center gap-1.5">
-                    Next Step <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Active Round Content Screen -->
-        <div id="roundContentCard" class="space-y-5">
-            
-            <!-- Main Question & Statement Box -->
-            <div class="academic-card rounded-3xl p-6 md:p-8 shadow-2xl relative overflow-hidden">
-                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-                    <span id="roundBadge" class="bg-indigo-500/10 text-indigo-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-indigo-500/20">
-                        Round 1 • Expansion
-                    </span>
-                    <span id="stepPhaseBadge" class="bg-emerald-500/20 text-emerald-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-emerald-500/30">
-                        Step 1: Base Statement & First Vote
-                    </span>
-                </div>
-
-                <!-- Main Statement Display -->
-                <div class="my-3">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest block mb-1.5">Voting Statement:</span>
-                    <h3 id="roundStatement" class="font-display text-xl md:text-2xl font-extrabold text-white leading-relaxed">
-                        Loading statement...
-                    </h3>
-                </div>
-
-                <!-- New Detail Reveal Container (Steps 3, 4, 5) -->
-                <div id="newDetailContainer" class="hidden mt-5 pt-5 border-t border-slate-800/80 bg-amber-500/10 rounded-2xl p-4 md:p-5 border-l-4 border-l-amber-500 fade-in">
-                    <div class="flex items-center gap-2 text-amber-400 font-extrabold text-xs uppercase tracking-wider mb-1.5">
-                        <i class="fa-solid fa-circle-exclamation text-amber-500 text-sm"></i> New Scenario Detail Revealed:
-                    </div>
-                    <p id="roundDetailText" class="font-semibold text-slate-200 text-sm md:text-base leading-relaxed">
-                        Loading detail...
-                    </p>
-                </div>
-            </div>
-
-            <!-- Live Voting Results & Shift Analytics Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                
-                <!-- Vote 1 Results -->
-                <div class="academic-card rounded-2xl p-5 shadow-xl flex flex-col justify-between border-t-2 border-t-indigo-500">
-                    <div>
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-4">
-                            <h4 class="font-display text-sm font-bold text-white flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-indigo-600 text-[11px] flex items-center justify-center font-bold">1</span>
-                                Vote #1 (Initial Opinion)
-                            </h4>
-                            <span id="v1TotalBadge" class="bg-slate-800 text-indigo-400 font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-700">
-                                0 Votes
-                            </span>
-                        </div>
-
-                        <!-- Bar Charts Vote 1 -->
-                        <div class="space-y-3.5" id="v1BarContainer">
-                            <!-- Agree -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-emerald-400"><i class="fa-solid fa-thumbs-up mr-1"></i> Agree</span>
-                                    <span id="v1AgreeText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v1AgreeBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <!-- Disagree -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-rose-400"><i class="fa-solid fa-thumbs-down mr-1"></i> Disagree</span>
-                                    <span id="v1DisagreeText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v1DisagreeBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <!-- Unsure -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-amber-400"><i class="fa-solid fa-circle-question mr-1"></i> Unsure</span>
-                                    <span id="v1UnsureText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v1UnsureBar" class="bg-amber-400 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center">
-                        Initial reaction prior to revealing new detail
-                    </div>
-                </div>
-
-                <!-- Vote 2 Results -->
-                <div class="academic-card rounded-2xl p-5 shadow-xl flex flex-col justify-between border-t-2 border-t-emerald-500">
-                    <div>
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-4">
-                            <h4 class="font-display text-sm font-bold text-white flex items-center gap-2">
-                                <span class="w-5 h-5 rounded-full bg-emerald-600 text-[11px] flex items-center justify-center font-bold">2</span>
-                                Vote #2 (After New Detail)
-                            </h4>
-                            <span id="v2TotalBadge" class="bg-slate-800 text-emerald-400 font-bold text-xs px-2.5 py-0.5 rounded-full border border-slate-700">
-                                0 Votes
-                            </span>
-                        </div>
-
-                        <!-- Bar Charts Vote 2 -->
-                        <div class="space-y-3.5" id="v2BarContainer">
-                            <!-- Agree -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-emerald-400"><i class="fa-solid fa-thumbs-up mr-1"></i> Agree</span>
-                                    <span id="v2AgreeText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v2AgreeBar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <!-- Disagree -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-rose-400"><i class="fa-solid fa-thumbs-down mr-1"></i> Disagree</span>
-                                    <span id="v2DisagreeText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v2DisagreeBar" class="bg-rose-500 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            <!-- Unsure -->
-                            <div>
-                                <div class="flex justify-between text-xs font-semibold mb-1">
-                                    <span class="text-amber-400"><i class="fa-solid fa-circle-question mr-1"></i> Unsure</span>
-                                    <span id="v2UnsureText" class="text-white font-mono">0 (0%)</span>
-                                </div>
-                                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
-                                    <div id="v2UnsureBar" class="bg-amber-400 h-full transition-all duration-500" style="width: 0%"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 text-center">
-                        Re-evaluating exact statement with context
-                    </div>
-                </div>
-
-                <!-- Shift Analytics & Discussion Prompt -->
-                <div class="academic-card rounded-2xl p-5 shadow-xl flex flex-col justify-between border-t-2 border-t-amber-500">
-                    <div>
-                        <div class="flex items-center justify-between border-b border-slate-800 pb-2.5 mb-3">
-                            <h4 class="font-display text-sm font-bold text-amber-300 flex items-center gap-2">
-                                <i class="fa-solid fa-right-left"></i> Opinion Shift (Delta)
-                            </h4>
-                            <span class="text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded font-bold uppercase border border-amber-500/20">Net Shift</span>
-                        </div>
-
-                        <!-- Shift Delta Displays -->
-                        <div class="grid grid-cols-3 gap-2 text-center mb-4">
-                            <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-                                <span class="text-[10px] text-emerald-400 font-bold block uppercase">Agree</span>
-                                <span id="shiftAgree" class="font-mono text-base font-bold text-white">0</span>
-                            </div>
-                            <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-                                <span class="text-[10px] text-rose-400 font-bold block uppercase">Disagree</span>
-                                <span id="shiftDisagree" class="font-mono text-base font-bold text-white">0</span>
-                            </div>
-                            <div class="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800">
-                                <span class="text-[10px] text-amber-400 font-bold block uppercase">Unsure</span>
-                                <span id="shiftUnsure" class="font-mono text-base font-bold text-white">0</span>
-                            </div>
-                        </div>
-
-                        <!-- Presenter Discussion Prompt Box -->
-                        <div class="bg-slate-950/90 border border-indigo-500/30 rounded-xl p-3.5 text-xs space-y-1.5">
-                            <div class="font-bold text-indigo-300 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                                <i class="fa-solid fa-microphone text-indigo-400"></i> Class Discussion Prompt:
-                            </div>
-                            <p id="presenterPromptText" class="font-medium text-slate-200 leading-relaxed italic">
-                                Loading prompt...
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="mt-3 pt-2 text-[11px] text-slate-400 flex justify-between items-center">
-                        <span>"Focus on why opinions changed"</span>
-                        <span id="shiftNetBadge" class="font-mono font-bold text-amber-400">0 Net Changes</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Author Connections Section (Step 5) -->
-            <div id="authorsSection" class="hidden academic-card rounded-3xl p-6 shadow-2xl fade-in border-t-2 border-t-indigo-500">
-                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
-                    <h4 class="font-display text-base font-bold text-indigo-300 flex items-center gap-2">
-                        <i class="fa-solid fa-graduation-cap text-indigo-400"></i> Theoretical Author Connections (Economic Literature)
-                    </h4>
-                    <span class="text-xs text-slate-400">Revealed to connect real-world reasoning to economic theory</span>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="authorCardsGrid">
-                    <!-- Injected dynamically via JS -->
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Final Synthesis Screen (Round 4) -->
-        <div id="synthesisCard" class="hidden academic-card rounded-3xl p-6 md:p-10 shadow-2xl space-y-8 fade-in">
-            <div class="text-center max-w-3xl mx-auto space-y-3">
-                <div class="inline-block bg-indigo-500/10 text-indigo-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-indigo-500/20">
-                    Session Synthesis & Reflection
-                </div>
-                <h3 class="font-display text-2xl md:text-3xl font-extrabold text-white">
-                    Which Detail Changed Your Judgment the Most?
-                </h3>
-                <p class="text-slate-400 font-medium text-sm leading-relaxed">
-                    "Changing an answer isn't the goal by itself; explaining why the new information does—or doesn't—change it is the core of economic analysis."
-                </p>
-            </div>
-
-            <!-- Closing Discussion Question Box -->
-            <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 text-center max-w-3xl mx-auto shadow-xl">
-                <p class="font-display text-lg font-bold leading-relaxed text-amber-300">
-                    “Which detail made you rethink your answer the most: the business expanding, some workers losing income, or the possibility of supporting those workers?”
-                </p>
-            </div>
-
-            <!-- Summary Table of Shift across 3 Rounds -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-                <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
-                    <span class="text-xs font-bold text-indigo-400 uppercase block mb-1">Round 1 • Expansion</span>
-                    <p class="text-xs text-slate-400 leading-snug mb-3">Porter (Opportunity) vs. Camarota (Worker Competition) vs. Borjas (Winners & Losers)</p>
-                    <div class="text-xs font-mono font-bold text-emerald-400" id="round1SynthesisDelta">Shift: 0 Changes</div>
-                </div>
-                <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
-                    <span class="text-xs font-bold text-indigo-400 uppercase block mb-1">Round 2 • Competition</span>
-                    <p class="text-xs text-slate-400 leading-snug mb-3">Market demand & specialization vs. income distribution ("Necessarily")</p>
-                    <div class="text-xs font-mono font-bold text-emerald-400" id="round2SynthesisDelta">Shift: 0 Changes</div>
-                </div>
-                <div class="bg-slate-950/80 p-5 rounded-2xl border border-slate-800">
-                    <span class="text-xs font-bold text-indigo-400 uppercase block mb-1">Round 3 • Compensation</span>
-                    <p class="text-xs text-slate-400 leading-snug mb-3">Policy measures for retraining/support and their practical effectiveness</p>
-                    <div class="text-xs font-mono font-bold text-emerald-400" id="round3SynthesisDelta">Shift: 0 Changes</div>
-                </div>
-            </div>
-
-            <div class="text-center pt-3">
-                <button onclick="jumpToRound(0)" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-3 rounded-xl text-xs shadow-lg transition">
-                    <i class="fa-solid fa-rotate-left mr-2"></i> Restart Experiment
-                </button>
-            </div>
-        </div>
-
-    </main>
-
-    <!-- STUDENT MAIN CONTAINER -->
-    <main id="studentContainer" class="hidden flex-1 max-w-md w-full mx-auto p-4 flex flex-col justify-center my-auto relative z-10">
-        
-        <!-- Student Nickname Join Screen -->
-        <div id="studentJoinScreen" class="academic-card rounded-3xl p-6 shadow-2xl text-center space-y-5 fade-in">
-            <div class="w-14 h-14 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold">
-                <i class="fa-solid fa-users"></i>
-            </div>
+          <!-- Presenter Script & Instruction Prompt -->
+          <div id="scriptBox" class="bg-amber-950/30 border border-amber-800/40 p-4 rounded-xl flex items-start gap-3">
+            <span class="text-amber-400 text-lg">🎤</span>
             <div>
-                <h3 class="font-display text-2xl font-extrabold text-white">Join Poll Session</h3>
-                <p class="text-xs text-slate-400 mt-1">Participate in live voting on labor market economic dynamics</p>
+              <div class="text-xs font-bold text-amber-400 uppercase tracking-wide">Presenter Prompt</div>
+              <p id="scriptText" class="text-sm text-amber-200 mt-0.5">Read the statement aloud and invite students to submit their initial vote.</p>
             </div>
+          </div>
 
-            <div class="space-y-3 pt-2">
-                <input type="text" id="studentNicknameInput" placeholder="Enter your nickname or ID..." class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 font-semibold text-center text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition text-sm">
-                <button onclick="joinStudentGame()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-display font-bold py-3.5 rounded-xl text-sm shadow-lg transition">
-                    Join Session <i class="fa-solid fa-arrow-right ml-1"></i>
-                </button>
+          <!-- New Detail Box (Steps 2-4) -->
+          <div id="detailContainer" class="bg-slate-900 border border-indigo-900/50 p-6 rounded-2xl relative transition-all duration-300 opacity-40">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">New Information Detail</span>
+              <span id="detailBadge" class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">Step 3+</span>
             </div>
+            <p id="detailText" class="text-base text-slate-200 leading-relaxed font-medium">
+              The restaurant hires more servers and a manager. However, some existing kitchen workers receive fewer overtime hours and earn less each week.
+            </p>
+            <div id="questionPrompt" class="mt-4 pt-4 border-t border-slate-800 text-sm font-semibold text-indigo-300">
+              "Can the restaurant be doing better while some of its workers are doing worse?"
+            </div>
+          </div>
+
+          <!-- Author Connection Cards (Step 4) -->
+          <div id="authorsContainer" class="hidden space-y-3">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Economic Perspectives Introduced:</div>
+            <div id="authorCards" class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
         </div>
 
-        <!-- Student Dynamic Voting Screen -->
-        <div id="studentInputScreen" class="hidden space-y-4">
-            
-            <!-- Student Header Badge -->
-            <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between text-xs">
-                <div class="flex items-center gap-2">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                    <span class="font-semibold text-slate-300" id="studentNickDisplay">Student</span>
-                </div>
-                <span class="font-mono font-bold bg-indigo-500/10 text-indigo-400 px-2.5 py-0.5 rounded border border-indigo-500/20" id="studentStepStatusBadge">
-                    Round 1 • Vote #1
-                </span>
+        <!-- RIGHT COLUMN: Analytics & Shift Delta Chart -->
+        <div class="lg:col-span-5 bg-slate-900 border border-slate-800 p-6 rounded-2xl flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-slate-200 text-sm tracking-wide uppercase">Class Opinion Shift</h3>
+              <span id="totalVotesBadge" class="text-xs bg-slate-800 text-slate-400 px-2.5 py-1 rounded-full font-mono">0 Votes</span>
             </div>
 
-            <!-- Dynamic Voting Card depending on Step -->
-            <div id="studentStepCard" class="academic-card rounded-3xl p-6 shadow-2xl space-y-4">
-                <!-- Content injected dynamically via syncStudentView() -->
+            <!-- Canvas Chart -->
+            <div class="h-64 relative">
+              <canvas id="shiftChart"></canvas>
             </div>
+
+            <!-- Quantitative Delta Breakdown -->
+            <div class="grid grid-cols-3 gap-2 mt-6 text-center">
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-500">Agree</div>
+                <div id="agreeShift" class="text-lg font-extrabold text-emerald-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-500">Disagree</div>
+                <div id="disagreeShift" class="text-lg font-extrabold text-rose-400 mt-0.5">--</div>
+              </div>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div class="text-[10px] uppercase font-bold text-slate-500">Unsure</div>
+                <div id="unsureShift" class="text-lg font-extrabold text-amber-400 mt-0.5">--</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer Control Bar -->
+          <div class="flex justify-between items-center mt-6 pt-4 border-t border-slate-800">
+            <button onclick="prevStep()" class="text-xs font-semibold px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition">← Previous</button>
+            <span id="stepCounter" class="text-xs text-slate-500 font-mono">Step 1 of 5</span>
+            <button onclick="nextStep()" class="text-xs font-semibold px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition">Next Step →</button>
+          </div>
         </div>
 
-    </main>
+      </div>
+    </div>
 
-    <script>
-        // Data Structure for the 3 Interactive Rounds
-        const roundsData = [
+    <!-- ========================================== -->
+    <!-- STUDENT / VOTER VIEW                       -->
+    <!-- ========================================== -->
+    <div id="studentContainer" class="hidden max-w-xl mx-auto w-full space-y-6 my-auto py-6">
+      
+      <!-- Student Header Status -->
+      <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-center justify-between">
+        <div>
+          <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">Active Round</span>
+          <h3 id="studentRoundTitle" class="font-bold text-white text-base">Round 1: Initial Vote</h3>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="studentStepBadge" class="text-xs text-slate-400 font-medium">Live Synced</span>
+        </div>
+      </div>
+
+      <!-- Dynamic Student Action Box -->
+      <div id="studentActionCard" class="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-6">
+        
+        <!-- Content Prompt -->
+        <div>
+          <h2 id="studentPromptText" class="text-lg font-bold text-white leading-snug">
+            "If hiring immigrant workers helps a restaurant expand and create more jobs, it is a positive outcome for everyone working there."
+          </h2>
+          <p id="studentDetailBox" class="hidden mt-4 p-4 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-sm text-indigo-200">
+            <!-- Populated dynamically -->
+          </p>
+        </div>
+
+        <!-- Voting Tiles -->
+        <div id="studentVotingButtons" class="grid grid-cols-1 gap-3">
+          <button onclick="submitStudentVote('Agree')" class="w-full py-4 px-6 rounded-xl font-bold bg-emerald-950/50 border-2 border-emerald-600 hover:bg-emerald-600 text-emerald-200 hover:text-white transition text-left flex justify-between items-center group">
+            <span>Agree</span>
+            <span class="group-hover:translate-x-1 transition">→</span>
+          </button>
+          <button onclick="submitStudentVote('Disagree')" class="w-full py-4 px-6 rounded-xl font-bold bg-rose-950/50 border-2 border-rose-600 hover:bg-rose-600 text-rose-200 hover:text-white transition text-left flex justify-between items-center group">
+            <span>Disagree</span>
+            <span class="group-hover:translate-x-1 transition">→</span>
+          </button>
+          <button onclick="submitStudentVote('Unsure')" class="w-full py-4 px-6 rounded-xl font-bold bg-amber-950/50 border-2 border-amber-600 hover:bg-amber-600 text-amber-200 hover:text-white transition text-left flex justify-between items-center group">
+            <span>Unsure</span>
+            <span class="group-hover:translate-x-1 transition">→</span>
+          </button>
+        </div>
+
+        <!-- Submitted Confirmation State -->
+        <div id="studentConfirmation" class="hidden text-center py-8 space-y-3">
+          <div class="text-4xl">✅</div>
+          <h3 class="font-bold text-white text-lg">Vote Submitted!</h3>
+          <p id="studentVoteRecordedText" class="text-sm text-slate-400">Your opinion has been recorded for this step.</p>
+          <div class="text-xs text-indigo-400 pt-2">Listen to the instructor for discussion prompts.</div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    // CASE STUDY DATA MATRIX
+    const roundsData = [
+      {
+        title: "Round 1: Does expansion mean everyone benefits?",
+        statement: "“If hiring immigrant workers helps a restaurant expand and create more jobs, it is a positive outcome for everyone working there.”",
+        detail: "The restaurant hires more servers and a manager. However, some existing kitchen workers receive fewer overtime hours and earn less each week.",
+        question: "“Can the restaurant be doing better while some of its workers are doing worse?”",
+        authors: [
+          { name: "Porter", role: "Opportunity & Growth", text: "Emphasizes firm expansion and overall job creation." },
+          { name: "Camarota", role: "Worker Competition", text: "Highlights direct earnings loss for competing existing staff." },
+          { name: "Borjas", role: "Winners & Losers", text: "Distinguishes between net gains and distributional trade-offs." }
+        ]
+      },
+      {
+        title: "Round 2: Does more competition tell the whole story?",
+        statement: "“If more people are applying for kitchen jobs, the workers already doing those jobs will necessarily end up worse off.”",
+        detail: "The restaurant gains customers, including newly arrived immigrant families. It expands its kitchen and needs more staff. Some existing employees move into training and supervisory roles.",
+        question: "“Does this change your answer? What about the workers who don’t move into a new role?”",
+        authors: [
+          { name: "Camarota", role: "Initial Competition", text: "Focuses on potential wage pressure from labor supply." },
+          { name: "Porter", role: "Demand & Specialization", text: "Demonstrates demand growth and task specialization benefits." },
+          { name: "Borjas", role: "Distributional Spread", text: "Re-evaluates workers who fail to move into supervisory roles." }
+        ]
+      },
+      {
+        title: "Round 3: What would make the outcome acceptable?",
+        statement: "“If immigration helps businesses grow and creates more jobs overall, those benefits are enough to justify it—even if some existing workers lose income.”",
+        detail: "The restaurant proposes using part of its additional profits to provide temporary income support and paid training for employees whose earnings fell. However, training does not guarantee a better-paying position.",
+        question: "“Would that change your judgment, or would you still have concerns?”",
+        authors: [
+          { name: "Porter", role: "Economic Gains", text: "Presents overall growth as the primary standard." },
+          { name: "Camarota", role: "Affected Protection", text: "Questions if compensation fully offsets lost security." },
+          { name: "Borjas", role: "Compensating Losers", text: "Explores structural redistribution and retraining policies." }
+        ]
+      }
+    ];
+
+    const stepNames = [
+      { name: "First Vote", time: 20, script: "Read the statement aloud and collect the class's initial reaction." },
+      { name: "Initial Reaction", time: 30, script: "Ask one volunteer to explain why they voted Agree, Disagree, or Unsure." },
+      { name: "New Detail", time: 15, script: "Reveal the new detail. Keep students focused on the word 'everyone'." },
+      { name: "Second Vote", time: 20, script: "Take the second vote on the EXACT same statement with the new context." },
+      { name: "Discussion & Authors", time: 60, script: "Ask who changed their mind and why. Then reveal author connections." }
+    ];
+
+    // APPLICATION STATE
+    let currentRound = 0;
+    let currentStep = 0;
+    let timerSeconds = 20;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let chartInstance = null;
+
+    // VOTING STORE
+    let votes = {
+      0: { v1: { Agree: 0, Disagree: 0, Unsure: 0 }, v2: { Agree: 0, Disagree: 0, Unsure: 0 } },
+      1: { v1: { Agree: 0, Disagree: 0, Unsure: 0 }, v2: { Agree: 0, Disagree: 0, Unsure: 0 } },
+      2: { v1: { Agree: 0, Disagree: 0, Unsure: 0 }, v2: { Agree: 0, Disagree: 0, Unsure: 0 } }
+    };
+
+    // INITIALIZATION
+    window.addEventListener('DOMContentLoaded', () => {
+      initChart();
+      updateUI();
+      setupKeyboardNav();
+      applyViewFromHash();
+    });
+
+    window.addEventListener('hashchange', applyViewFromHash);
+
+    // HASH ROUTING LOGIC
+    function applyViewFromHash() {
+      if (window.location.hash === '#student') {
+        setView('student');
+        const toggleContainer = document.getElementById('viewToggleContainer');
+        if (toggleContainer) toggleContainer.style.display = 'none';
+      } else if (window.location.hash === '#presenter') {
+        setView('presenter');
+      }
+    }
+
+    // VIEW SWITCHER
+    function setView(view) {
+      const presenterEl = document.getElementById('presenterContainer');
+      const studentEl = document.getElementById('studentContainer');
+      const btnP = document.getElementById('btnPresenter');
+      const btnS = document.getElementById('btnStudent');
+
+      if (view === 'presenter') {
+        presenterEl.classList.remove('hidden');
+        studentEl.classList.add('hidden');
+        btnP.className = "px-4 py-1.5 rounded-md bg-indigo-600 text-white shadow transition";
+        btnS.className = "px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition";
+      } else {
+        presenterEl.classList.add('hidden');
+        studentEl.classList.remove('hidden');
+        btnS.className = "px-4 py-1.5 rounded-md bg-indigo-600 text-white shadow transition";
+        btnP.className = "px-4 py-1.5 rounded-md text-slate-400 hover:text-white transition";
+        renderStudentView();
+      }
+    }
+
+    // NAVIGATION CONTROLS
+    function setRound(idx) {
+      currentRound = idx;
+      currentStep = 0;
+      resetStepTimer();
+      updateUI();
+    }
+
+    function setStep(idx) {
+      currentStep = idx;
+      resetStepTimer();
+      updateUI();
+    }
+
+    function nextStep() {
+      if (currentStep < 4) {
+        currentStep++;
+      } else if (currentRound < 2) {
+        currentRound++;
+        currentStep = 0;
+      }
+      resetStepTimer();
+      updateUI();
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+      } else if (currentRound > 0) {
+        currentRound--;
+        currentStep = 4;
+      }
+      resetStepTimer();
+      updateUI();
+    }
+
+    // UI REFRESH
+    function updateUI() {
+      const data = roundsData[currentRound];
+
+      // Round Tab styling
+      [0, 1, 2].forEach(i => {
+        const btn = document.getElementById(`roundBtn${i}`);
+        if (i === currentRound) {
+          btn.className = "px-4 py-2 rounded-lg font-bold text-sm transition bg-indigo-600 text-white";
+        } else {
+          btn.className = "px-4 py-2 rounded-lg font-bold text-sm transition bg-slate-800 text-slate-400 hover:text-white";
+        }
+      });
+
+      // Step Cards styling
+      for (let i = 0; i < 5; i++) {
+        const card = document.getElementById(`stepCard${i}`);
+        if (i === currentStep) {
+          card.className = "step-card active cursor-pointer p-2.5 rounded-lg border border-indigo-500 bg-indigo-950/30";
+          card.querySelector('div').className = "font-bold text-indigo-400 mb-0.5";
+        } else {
+          card.className = "step-card cursor-pointer p-2.5 rounded-lg border border-slate-800 bg-slate-900 opacity-60";
+          card.querySelector('div').className = "font-bold text-slate-400 mb-0.5";
+        }
+      }
+
+      // Populate text
+      document.getElementById('roundTitleHeader').innerText = data.title;
+      document.getElementById('statementText').innerText = data.statement;
+      document.getElementById('detailText').innerText = data.detail;
+      document.getElementById('questionPrompt').innerText = data.question;
+      document.getElementById('scriptText').innerText = stepNames[currentStep].script;
+      document.getElementById('stepCounter').innerText = `Step ${currentStep + 1} of 5`;
+
+      // Reveal Detail visibility
+      const detailContainer = document.getElementById('detailContainer');
+      if (currentStep >= 2) {
+        detailContainer.classList.remove('opacity-40');
+        detailContainer.classList.add('border-indigo-500/80', 'bg-slate-900');
+      } else {
+        detailContainer.classList.add('opacity-40');
+        detailContainer.classList.remove('border-indigo-500/80');
+      }
+
+      // Authors Visibility
+      const authorsContainer = document.getElementById('authorsContainer');
+      if (currentStep === 4) {
+        authorsContainer.classList.remove('hidden');
+        renderAuthorCards(data.authors);
+      } else {
+        authorsContainer.classList.add('hidden');
+      }
+
+      updateChart();
+      renderStudentView();
+    }
+
+    function renderAuthorCards(authors) {
+      const container = document.getElementById('authorCards');
+      container.innerHTML = authors.map(a => `
+        <div class="bg-slate-950 border border-slate-800 p-3 rounded-xl">
+          <div class="text-xs font-bold text-indigo-400">${a.name}</div>
+          <div class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1">${a.role}</div>
+          <div class="text-xs text-slate-300">${a.text}</div>
+        </div>
+      `).join('');
+    }
+
+    // CHART.JS ANALYTICS
+    function initChart() {
+      const ctx = document.getElementById('shiftChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Agree', 'Disagree', 'Unsure'],
+          datasets: [
             {
-                id: 1,
-                title: "Round 1: Does expansion mean everyone benefits?",
-                badge: "Round 1 • Expansion",
-                statement: "“If hiring immigrant workers helps a restaurant expand and create more jobs, it is a positive outcome for everyone working there.”",
-                detail: "The restaurant hires more servers and a manager. However, some existing kitchen workers receive fewer overtime hours and earn less each week.",
-                initialPrompt: "Ask one volunteer to explain why they voted Agree, Disagree, or Unsure.",
-                discussionPrompt: "“Can the restaurant be doing better while some of its workers are doing worse?” (Focus on 'everyone' in the original statement).",
-                authors: [
-                    { name: "Porter", color: "bg-indigo-600", text: "The expansion illustrates the economic opportunity and growth emphasized in Porter’s argument." },
-                    { name: "Camarota", color: "bg-rose-600", text: "The reduced overtime earnings introduce Camarota’s concern about direct competition hurting native workers." },
-                    { name: "Borjas", color: "bg-amber-600", text: "The combination highlights Borjas’s core distinction between winners and losers in labor shifts." }
-                ],
-                votesV1: { agree: 0, disagree: 0, unsure: 0 },
-                votesV2: { agree: 0, disagree: 0, unsure: 0 }
+              label: 'Vote #1',
+              data: [0, 0, 0],
+              backgroundColor: 'rgba(99, 102, 241, 0.4)',
+              borderColor: 'rgba(99, 102, 241, 1)',
+              borderWidth: 1.5,
+              borderRadius: 6
             },
             {
-                id: 2,
-                title: "Round 2: Does more competition tell the whole story?",
-                badge: "Round 2 • Competition",
-                statement: "“If more people are applying for kitchen jobs, the workers already doing those jobs will necessarily end up worse off.”",
-                detail: "The restaurant gains customers, including newly arrived immigrant families. It expands its kitchen and needs more staff. Some existing employees move into training and supervisory roles.",
-                initialPrompt: "Ask a volunteer to explain why they voted Agree or Disagree.",
-                discussionPrompt: "“Does this change your answer? What about the workers who don’t move into a new role?” (Key word: 'necessarily').",
-                authors: [
-                    { name: "Camarota", color: "bg-rose-600", text: "The initial statement reflects the labor market competition emphasized by Camarota." },
-                    { name: "Porter", color: "bg-indigo-600", text: "New demand and specialized supervisory roles mirror the market expansion associated with Porter." },
-                    { name: "Borjas", color: "bg-amber-600", text: "Focusing on employees who do NOT advance brings back Borjas’s concern with income distribution." }
-                ],
-                votesV1: { agree: 0, disagree: 0, unsure: 0 },
-                votesV2: { agree: 0, disagree: 0, unsure: 0 }
-            },
-            {
-                id: 3,
-                title: "Round 3: What would make the outcome acceptable?",
-                badge: "Round 3 • Compensation",
-                statement: "“If immigration helps businesses grow and creates more jobs overall, those benefits are enough to justify it—even if some existing workers lose income.”",
-                detail: "The restaurant proposes using part of its additional profits to provide temporary income support and paid training for employees whose earnings fell. However, training does not guarantee a better-paying position.",
-                initialPrompt: "Invite TWO classmates with DIFFERENT answers to briefly explain their perspective.",
-                discussionPrompt: "“Would that change your judgment, or would you still have concerns?” (A pure judgment call).",
-                authors: [
-                    { name: "Porter vs. Camarota", color: "bg-teal-600", text: "Weighing Porter’s overall economic growth against Camarota’s concern for individual affected workers." },
-                    { name: "Borjas", color: "bg-amber-600", text: "Reflects Borjas’s analysis of policies that attempt to compensate and retrain those who lose out." }
-                ],
-                votesV1: { agree: 0, disagree: 0, unsure: 0 },
-                votesV2: { agree: 0, disagree: 0, unsure: 0 }
+              label: 'Vote #2',
+              data: [0, 0, 0],
+              backgroundColor: 'rgba(16, 185, 129, 0.7)',
+              borderColor: 'rgba(16, 185, 129, 1)',
+              borderWidth: 1.5,
+              borderRadius: 6
             }
-        ];
-
-        // Step Configuration per Round
-        const stepNames = [
-            { label: "1. Vote #1", time: 20 },
-            { label: "2. Initial Reaction", time: 30 },
-            { label: "3. Reveal Detail", time: 15 },
-            { label: "4. Vote #2", time: 20 },
-            { label: "5. Discussion & Authors", time: 60 }
-        ];
-
-        let currentRound = 0; // 0, 1, 2 = Rounds 1-3, 3 = Synthesis
-        let currentStep = 0;  // 0 to 4
-        let currentMode = 'presenter';
-        let studentNickname = "";
-        let studentVotedV1 = false;
-        let studentVotedV2 = false;
-        let timerSeconds = 20;
-        let timerInterval = null;
-        let isTimerRunning = false;
-
-        // Initialize state on page load
-        window.onload = function() {
-            renderStepIndicators();
-            renderPresenterScreen();
-            setupKeyboardNav();
-            
-            // Listen for cross-tab or state sync events
-            window.addEventListener('storage', syncFromStorage);
-            setInterval(checkStateSync, 300);
-            saveGameState();
-        };
-
-        function saveGameState() {
-            const state = {
-                currentRound,
-                currentStep,
-                roundsData
-            };
-            localStorage.setItem('econLabPollState', JSON.stringify(state));
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 } } }
+          },
+          scales: {
+            y: { beginAtZero: true, grid: { color: '#1e293b' }, ticks: { color: '#64748b' } },
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { weight: 'bold' } } }
+          }
         }
+      });
+    }
 
-        function checkStateSync() {
-            const raw = localStorage.getItem('econLabPollState');
-            if (!raw) return;
-            try {
-                const state = JSON.parse(raw);
-                if (state.currentRound !== currentRound || state.currentStep !== currentStep) {
-                    currentRound = state.currentRound;
-                    currentStep = state.currentStep;
-                    if (currentMode === 'presenter') {
-                        renderPresenterScreen();
-                    } else {
-                        syncStudentView();
-                    }
-                }
-            } catch(e){}
-        }
+    function updateChart() {
+      const roundVotes = votes[currentRound];
+      chartInstance.data.datasets[0].data = [roundVotes.v1.Agree, roundVotes.v1.Disagree, roundVotes.v1.Unsure];
+      chartInstance.data.datasets[1].data = [roundVotes.v2.Agree, roundVotes.v2.Disagree, roundVotes.v2.Unsure];
+      chartInstance.update();
 
-        function syncFromStorage() {
-            checkStateSync();
-        }
+      // Update Shift Badges
+      const calcDelta = (key) => {
+        const diff = roundVotes.v2[key] - roundVotes.v1[key];
+        if (diff > 0) return `+${diff}`;
+        return `${diff}`;
+      };
 
-        function renderStepIndicators() {
-            const container = document.getElementById('stepIndicatorContainer');
-            container.innerHTML = '';
+      document.getElementById('agreeShift').innerText = `${roundVotes.v2.Agree} (${calcDelta('Agree')})`;
+      document.getElementById('disagreeShift').innerText = `${roundVotes.v2.Disagree} (${calcDelta('Disagree')})`;
+      document.getElementById('unsureShift').innerText = `${roundVotes.v2.Unsure} (${calcDelta('Unsure')})`;
 
-            if (currentRound === 3) return; // Synthesis mode
+      const totalV1 = roundVotes.v1.Agree + roundVotes.v1.Disagree + roundVotes.v1.Unsure;
+      document.getElementById('totalVotesBadge').innerText = `${totalV1} Active Voters`;
+    }
 
-            stepNames.forEach((step, idx) => {
-                const btn = document.createElement('button');
-                btn.onclick = () => jumpToStep(idx);
-                
-                let activeStyle = "bg-slate-950 text-slate-400 border-slate-800";
-                if (idx === currentStep) {
-                    activeStyle = "bg-indigo-600 text-white font-bold border-indigo-400 shadow";
-                } else if (idx < currentStep) {
-                    activeStyle = "bg-slate-800 text-emerald-400 border-slate-700";
-                }
+    // SIMULATION GENERATOR
+    function simulateVotes() {
+      const round = votes[currentRound];
+      // Generate initial votes
+      round.v1.Agree = Math.floor(Math.random() * 12) + 8;
+      round.v1.Disagree = Math.floor(Math.random() * 8) + 3;
+      round.v1.Unsure = Math.floor(Math.random() * 5) + 2;
 
-                btn.className = `px-2.5 py-1 rounded-xl text-xs font-semibold border transition ${activeStyle}`;
-                btn.innerHTML = `${step.label}`;
-                container.appendChild(btn);
-            });
-        }
+      // Shift toward disagreement or nuance on detail reveal
+      round.v2.Agree = Math.max(1, round.v1.Agree - Math.floor(Math.random() * 6) - 3);
+      round.v2.Disagree = round.v1.Disagree + Math.floor(Math.random() * 7) + 2;
+      round.v2.Unsure = Math.floor(Math.random() * 4) + 1;
 
-        function renderPresenterScreen() {
-            saveGameState();
+      updateChart();
+    }
 
-            if (currentRound === 3) {
-                document.getElementById('roundContentCard').classList.add('hidden');
-                document.getElementById('synthesisCard').classList.remove('hidden');
-                document.getElementById('stepIndicatorContainer').classList.add('hidden');
-                updateSynthesisView();
-                updateRoundTabs();
-                return;
-            } else {
-                document.getElementById('roundContentCard').classList.remove('hidden');
-                document.getElementById('synthesisCard').classList.add('hidden');
-                document.getElementById('stepIndicatorContainer').classList.remove('hidden');
-            }
+    // STUDENT VIEW RENDERER
+    function renderStudentView() {
+      const data = roundsData[currentRound];
+      document.getElementById('studentRoundTitle').innerText = `${data.title} - Step ${currentStep + 1}`;
+      document.getElementById('studentPromptText').innerText = data.statement;
 
-            const data = roundsData[currentRound];
-            updateRoundTabs();
+      const detailBox = document.getElementById('studentDetailBox');
+      if (currentStep >= 2) {
+        detailBox.classList.remove('hidden');
+        detailBox.innerText = `💡 New Context: ${data.detail}`;
+      } else {
+        detailBox.classList.add('hidden');
+      }
 
-            // Set Title & Statement
-            document.getElementById('roundBadge').innerText = data.badge;
-            document.getElementById('roundStatement').innerText = data.statement;
-            document.getElementById('roundDetailText').innerText = data.detail;
+      // Reset voting buttons visibility
+      document.getElementById('studentVotingButtons').classList.remove('hidden');
+      document.getElementById('studentConfirmation').classList.add('hidden');
+    }
 
-            const detailContainer = document.getElementById('newDetailContainer');
-            const stepPhaseBadge = document.getElementById('stepPhaseBadge');
-            const promptText = document.getElementById('presenterPromptText');
-            const authorsSection = document.getElementById('authorsSection');
+    function submitStudentVote(option) {
+      const phase = (currentStep >= 3) ? 'v2' : 'v1';
+      votes[currentRound][phase][option]++;
+      updateChart();
 
-            timerSeconds = stepNames[currentStep].time;
+      document.getElementById('studentVotingButtons').classList.add('hidden');
+      document.getElementById('studentConfirmation').classList.remove('hidden');
+      document.getElementById('studentVoteRecordedText').innerText = `Recorded '${option}' for ${phase === 'v1' ? 'First Vote' : 'Second Vote'}.`;
+    }
+
+    // TIMER SYSTEM
+    function toggleTimer() {
+      if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        document.getElementById('btnTimerToggle').innerText = 'Start';
+      } else {
+        isTimerRunning = true;
+        document.getElementById('btnTimerToggle').innerText = 'Pause';
+        timerInterval = setInterval(() => {
+          if (timerSeconds > 0) {
+            timerSeconds--;
             updateTimerDisplay();
-
-            if (currentStep < 2) {
-                // Vote 1 or Initial Reaction
-                detailContainer.classList.add('hidden');
-                stepPhaseBadge.innerText = stepNames[currentStep].label;
-                stepPhaseBadge.className = "bg-indigo-500/20 text-indigo-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-indigo-500/30";
-                promptText.innerText = data.initialPrompt;
-                authorsSection.classList.add('hidden');
-            } else if (currentStep === 2) {
-                // Reveal Detail
-                detailContainer.classList.remove('hidden');
-                stepPhaseBadge.innerText = stepNames[currentStep].label;
-                stepPhaseBadge.className = "bg-amber-500/20 text-amber-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-amber-500/30";
-                promptText.innerText = "Read the new detail to the class, then proceed to Vote #2!";
-                authorsSection.classList.add('hidden');
-            } else {
-                // Vote 2 or Discussion / Authors
-                detailContainer.classList.remove('hidden');
-                stepPhaseBadge.innerText = stepNames[currentStep].label;
-                stepPhaseBadge.className = "bg-emerald-500/20 text-emerald-400 font-bold text-xs px-3.5 py-1 rounded-full uppercase tracking-wider border border-emerald-500/30";
-                promptText.innerText = data.discussionPrompt;
-                
-                if (currentStep === 4) {
-                    authorsSection.classList.remove('hidden');
-                    renderAuthorCards(data.authors);
-                } else {
-                    authorsSection.classList.add('hidden');
-                }
-            }
-
-            renderVoteCharts();
-            renderStepIndicators();
-            if (currentMode === 'student') syncStudentView();
-        }
-
-        function renderVoteCharts() {
-            const data = roundsData[currentRound];
-            
-            // Vote 1 Totals
-            const v1Total = data.votesV1.agree + data.votesV1.disagree + data.votesV1.unsure;
-            document.getElementById('v1TotalBadge').innerText = `${v1Total} Votes`;
-
-            const v1AgreePct = v1Total ? Math.round((data.votesV1.agree / v1Total) * 100) : 0;
-            const v1DisagreePct = v1Total ? Math.round((data.votesV1.disagree / v1Total) * 100) : 0;
-            const v1UnsurePct = v1Total ? Math.round((data.votesV1.unsure / v1Total) * 100) : 0;
-
-            document.getElementById('v1AgreeBar').style.width = `${v1AgreePct}%`;
-            document.getElementById('v1DisagreeBar').style.width = `${v1DisagreePct}%`;
-            document.getElementById('v1UnsureBar').style.width = `${v1UnsurePct}%`;
-
-            document.getElementById('v1AgreeText').innerText = `${data.votesV1.agree} (${v1AgreePct}%)`;
-            document.getElementById('v1DisagreeText').innerText = `${data.votesV1.disagree} (${v1DisagreePct}%)`;
-            document.getElementById('v1UnsureText').innerText = `${data.votesV1.unsure} (${v1UnsurePct}%)`;
-
-            // Vote 2 Totals
-            const v2Total = data.votesV2.agree + data.votesV2.disagree + data.votesV2.unsure;
-            document.getElementById('v2TotalBadge').innerText = `${v2Total} Votes`;
-
-            const v2AgreePct = v2Total ? Math.round((data.votesV2.agree / v2Total) * 100) : 0;
-            const v2DisagreePct = v2Total ? Math.round((data.votesV2.disagree / v2Total) * 100) : 0;
-            const v2UnsurePct = v2Total ? Math.round((data.votesV2.unsure / v2Total) * 100) : 0;
-
-            document.getElementById('v2AgreeBar').style.width = `${v2AgreePct}%`;
-            document.getElementById('v2DisagreeBar').style.width = `${v2DisagreePct}%`;
-            document.getElementById('v2UnsureBar').style.width = `${v2UnsurePct}%`;
-
-            document.getElementById('v2AgreeText').innerText = `${data.votesV2.agree} (${v2AgreePct}%)`;
-            document.getElementById('v2DisagreeText').innerText = `${data.votesV2.disagree} (${v2DisagreePct}%)`;
-            document.getElementById('v2UnsureText').innerText = `${data.votesV2.unsure} (${v2UnsurePct}%)`;
-
-            // Deltas
-            const deltaAgree = data.votesV2.agree - data.votesV1.agree;
-            const deltaDisagree = data.votesV2.disagree - data.votesV1.disagree;
-            const deltaUnsure = data.votesV2.unsure - data.votesV1.unsure;
-
-            document.getElementById('shiftAgree').innerText = (deltaAgree >= 0 ? '+' : '') + deltaAgree;
-            document.getElementById('shiftDisagree').innerText = (deltaDisagree >= 0 ? '+' : '') + deltaDisagree;
-            document.getElementById('shiftUnsure').innerText = (deltaUnsure >= 0 ? '+' : '') + deltaUnsure;
-
-            const totalShifts = Math.abs(deltaAgree) + Math.abs(deltaDisagree) + Math.abs(deltaUnsure);
-            document.getElementById('shiftNetBadge').innerText = `${totalShifts} Net Shifts`;
-        }
-
-        function renderAuthorCards(authors) {
-            const grid = document.getElementById('authorCardsGrid');
-            grid.innerHTML = '';
-
-            authors.forEach(auth => {
-                const card = document.createElement('div');
-                card.className = "bg-slate-950/80 border border-slate-800 p-4 rounded-2xl flex flex-col justify-between";
-                card.innerHTML = `
-                    <div>
-                        <span class="inline-block ${auth.color} text-white font-extrabold text-xs px-2.5 py-0.5 rounded-md mb-2">
-                            ${auth.name}
-                        </span>
-                        <p class="text-xs font-medium text-slate-300 leading-relaxed">
-                            ${auth.text}
-                        </p>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        function updateRoundTabs() {
-            [0, 1, 2, 3].forEach(idx => {
-                const tab = document.getElementById(`roundTab${idx}`);
-                if (idx === currentRound) {
-                    tab.className = "px-3 py-1 rounded-lg font-bold text-xs transition bg-indigo-600 text-white shadow";
-                } else {
-                    tab.className = "px-3 py-1 rounded-lg font-bold text-xs transition text-slate-400 hover:text-white";
-                }
-            });
-        }
-
-        function simulateClassVotes() {
-            const data = roundsData[currentRound];
-
-            if (currentStep < 3) {
-                // Generate Vote 1
-                data.votesV1.agree = Math.floor(Math.random() * 8 + 8);    // 8-15
-                data.votesV1.disagree = Math.floor(Math.random() * 6 + 4); // 4-9
-                data.votesV1.unsure = Math.floor(Math.random() * 4 + 2);   // 2-5
-            } else {
-                // Generate Vote 2 with plausible mind shifts
-                if (currentRound === 0) {
-                    // Detail: Overtime reduced for kitchen staff -> shifts toward Disagree
-                    data.votesV2.agree = Math.max(1, data.votesV1.agree - Math.floor(Math.random() * 5 + 3));
-                    data.votesV2.disagree = data.votesV1.disagree + Math.floor(Math.random() * 6 + 3);
-                    data.votesV2.unsure = Math.max(1, data.votesV1.unsure - 1);
-                } else if (currentRound === 1) {
-                    // Detail: Demand increases, supervisory roles created -> shifts toward Agree
-                    data.votesV2.agree = data.votesV1.agree + Math.floor(Math.random() * 5 + 3);
-                    data.votesV2.disagree = Math.max(1, data.votesV1.disagree - Math.floor(Math.random() * 4 + 2));
-                    data.votesV2.unsure = Math.max(1, data.votesV1.unsure - 1);
-                } else {
-                    // Detail: Profit sharing for training but no guarantee -> mixed
-                    data.votesV2.agree = data.votesV1.agree + Math.floor(Math.random() * 3 - 1);
-                    data.votesV2.disagree = data.votesV1.disagree + Math.floor(Math.random() * 4 + 1);
-                    data.votesV2.unsure = Math.max(1, data.votesV1.unsure + 1);
-                }
-            }
-
-            renderVoteCharts();
-            saveGameState();
-        }
-
-        function nextStep() {
-            if (currentStep < 4) {
-                currentStep++;
-            } else if (currentRound < 3) {
-                currentRound++;
-                currentStep = 0;
-                studentVotedV1 = false;
-                studentVotedV2 = false;
-            }
-            renderPresenterScreen();
-        }
-
-        function prevStep() {
-            if (currentStep > 0) {
-                currentStep--;
-            } else if (currentRound > 0) {
-                currentRound--;
-                currentStep = 4;
-            }
-            renderPresenterScreen();
-        }
-
-        function jumpToStep(stepIdx) {
-            currentStep = stepIdx;
-            renderPresenterScreen();
-        }
-
-        function jumpToRound(roundIdx) {
-            currentRound = roundIdx;
-            currentStep = 0;
-            studentVotedV1 = false;
-            studentVotedV2 = false;
-            renderPresenterScreen();
-        }
-
-        function updateSynthesisView() {
-            roundsData.forEach((r, idx) => {
-                const deltaAgree = r.votesV2.agree - r.votesV1.agree;
-                const deltaDisagree = r.votesV2.disagree - r.votesV1.disagree;
-                const totalShift = Math.abs(deltaAgree) + Math.abs(deltaDisagree);
-                
-                const element = document.getElementById(`round${idx + 1}SynthesisDelta`);
-                if (element) {
-                    element.innerText = `Net Shifts: ${totalShift} changes (Agree: ${deltaAgree >= 0 ? '+' : ''}${deltaAgree}, Disagree: ${deltaDisagree >= 0 ? '+' : ''}${deltaDisagree})`;
-                }
-            });
-            confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
-        }
-
-        function joinStudentGame() {
-            const nick = document.getElementById('studentNicknameInput').value.trim();
-            if (!nick) return;
-
-            studentNickname = nick;
-            document.getElementById('studentNickDisplay').innerText = nick;
-            document.getElementById('studentJoinScreen').classList.add('hidden');
-            document.getElementById('studentInputScreen').classList.remove('hidden');
-            syncStudentView();
-        }
-
-        function syncStudentView() {
-            const card = document.getElementById('studentStepCard');
-            const statusBadge = document.getElementById('studentStepStatusBadge');
-            
-            if (currentRound === 3) {
-                statusBadge.innerText = "Synthesis • Final Reflection";
-                card.innerHTML = `
-                    <div class="text-center space-y-3">
-                        <div class="w-12 h-12 bg-indigo-500/10 text-indigo-400 rounded-full flex items-center justify-center mx-auto text-xl">
-                            <i class="fa-solid fa-flag-checkered"></i>
-                        </div>
-                        <h4 class="font-display text-lg font-bold text-white">Session Completed!</h4>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Thank you for participating! Review the presenter screen for the final synthesis of all three rounds.
-                        </p>
-                    </div>
-                `;
-                return;
-            }
-
-            const data = roundsData[currentRound];
-
-            if (currentStep === 0) {
-                // Step 1: First Vote
-                statusBadge.innerText = `Round ${currentRound + 1} • Vote #1`;
-                if (!studentVotedV1) {
-                    card.innerHTML = `
-                        <div>
-                            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block mb-1">Statement for Vote #1</span>
-                            <h4 class="font-display text-base font-bold text-white leading-snug">${data.statement}</h4>
-                        </div>
-                        <div class="space-y-2.5 pt-2">
-                            <button onclick="submitStudentVote('agree', 1)" class="vote-card-btn w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-thumbs-up mr-2"></i> AGREE</span>
-                                <i class="fa-solid fa-chevron-right text-emerald-200 text-xs"></i>
-                            </button>
-                            <button onclick="submitStudentVote('disagree', 1)" class="vote-card-btn w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-thumbs-down mr-2"></i> DISAGREE</span>
-                                <i class="fa-solid fa-chevron-right text-rose-200 text-xs"></i>
-                            </button>
-                            <button onclick="submitStudentVote('unsure', 1)" class="vote-card-btn w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-circle-question mr-2"></i> UNSURE</span>
-                                <i class="fa-solid fa-chevron-right text-amber-900 text-xs"></i>
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div class="text-center space-y-3 py-3">
-                            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl">
-                                <i class="fa-solid fa-check"></i>
-                            </div>
-                            <h4 class="font-display text-base font-bold text-white">Vote #1 Recorded!</h4>
-                            <p class="text-xs text-slate-400 leading-relaxed">
-                                Your response is registered. Please look at the presenter screen while the class discusses initial opinions.
-                            </p>
-                        </div>
-                    `;
-                }
-            } else if (currentStep === 1) {
-                // Step 2: Initial Reaction Discussion
-                statusBadge.innerText = `Round ${currentRound + 1} • Initial Reaction`;
-                card.innerHTML = `
-                    <div class="space-y-3">
-                        <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block">Class Discussion</span>
-                        <h4 class="font-display text-sm font-bold text-white leading-snug">Discussing Vote #1 Responses...</h4>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Prepare to explain your reasoning if called on by the presenter.
-                        </p>
-                    </div>
-                `;
-            } else if (currentStep === 2) {
-                // Step 3: Reveal Detail
-                statusBadge.innerText = `Round ${currentRound + 1} • New Information`;
-                card.innerHTML = `
-                    <div class="space-y-3">
-                        <span class="text-[10px] font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1">
-                            <i class="fa-solid fa-circle-exclamation"></i> New Scenario Fact Revealed
-                        </span>
-                        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-slate-200 font-semibold leading-relaxed">
-                            ${data.detail}
-                        </div>
-                        <p class="text-xs text-slate-400">
-                            Read this new detail carefully. Vote #2 will open momentarily on your screen!
-                        </p>
-                    </div>
-                `;
-            } else if (currentStep === 3) {
-                // Step 4: Second Vote
-                statusBadge.innerText = `Round ${currentRound + 1} • Vote #2`;
-                if (!studentVotedV2) {
-                    card.innerHTML = `
-                        <div>
-                            <span class="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block mb-1">Vote #2 with New Detail</span>
-                            <h4 class="font-display text-xs font-bold text-slate-300 mb-2 leading-snug">${data.statement}</h4>
-                            <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 text-[11px] text-amber-200 font-medium mb-3">
-                                <strong>Detail:</strong> ${data.detail}
-                            </div>
-                        </div>
-                        <div class="space-y-2 pt-1">
-                            <button onclick="submitStudentVote('agree', 2)" class="vote-card-btn w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-thumbs-up mr-2"></i> AGREE</span>
-                                <i class="fa-solid fa-chevron-right text-emerald-200 text-xs"></i>
-                            </button>
-                            <button onclick="submitStudentVote('disagree', 2)" class="vote-card-btn w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-thumbs-down mr-2"></i> DISAGREE</span>
-                                <i class="fa-solid fa-chevron-right text-rose-200 text-xs"></i>
-                            </button>
-                            <button onclick="submitStudentVote('unsure', 2)" class="vote-card-btn w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3.5 px-4 rounded-xl text-sm flex items-center justify-between shadow">
-                                <span><i class="fa-solid fa-circle-question mr-2"></i> UNSURE</span>
-                                <i class="fa-solid fa-chevron-right text-amber-900 text-xs"></i>
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    card.innerHTML = `
-                        <div class="text-center space-y-3 py-3">
-                            <div class="w-12 h-12 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl">
-                                <i class="fa-solid fa-check-double"></i>
-                            </div>
-                            <h4 class="font-display text-base font-bold text-white">Vote #2 Recorded!</h4>
-                            <p class="text-xs text-slate-400 leading-relaxed">
-                                See how the class shift is displayed on the presenter board!
-                            </p>
-                        </div>
-                    `;
-                }
-            } else if (currentStep === 4) {
-                // Step 5: Author Connections
-                statusBadge.innerText = `Round ${currentRound + 1} • Author Theory`;
-                card.innerHTML = `
-                    <div class="space-y-3">
-                        <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-widest block">Economic Literature</span>
-                        <h4 class="font-display text-sm font-bold text-white">Author Perspectives Unlocked!</h4>
-                        <p class="text-xs text-slate-400 leading-relaxed">
-                            Check the main screen to see how Porter, Camarota, and Borjas explain this scenario.
-                        </p>
-                    </div>
-                `;
-            }
-        }
-
-        function submitStudentVote(choice, voteNum) {
-            const data = roundsData[currentRound];
-            const targetVotes = voteNum === 1 ? data.votesV1 : data.votesV2;
-
-            if (choice === 'agree') targetVotes.agree++;
-            if (choice === 'disagree') targetVotes.disagree++;
-            if (choice === 'unsure') targetVotes.unsure++;
-
-            if (voteNum === 1) studentVotedV1 = true;
-            if (voteNum === 2) studentVotedV2 = true;
-
-            confetti({ particleCount: 35, spread: 50, origin: { y: 0.7 } });
-            saveGameState();
-            renderVoteCharts();
-            syncStudentView();
-        }
-
-        function switchView(mode) {
-            currentMode = mode;
-            const pres = document.getElementById('presenterContainer');
-            const stud = document.getElementById('studentContainer');
-            const btnP = document.getElementById('btnPresenterMode');
-            const btnS = document.getElementById('btnStudentMode');
-
-            if (mode === 'presenter') {
-                pres.classList.remove('hidden');
-                stud.classList.add('hidden');
-                btnP.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow transition flex items-center gap-1.5";
-                btnS.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5";
-            } else {
-                pres.classList.add('hidden');
-                stud.classList.remove('hidden');
-                btnS.className = "px-3 py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white shadow transition flex items-center gap-1.5";
-                btnP.className = "px-3 py-1.5 text-xs font-bold rounded-lg text-slate-400 hover:text-white transition flex items-center gap-1.5";
-                syncStudentView();
-            }
-        }
-
-        function toggleTimer() {
-            if (isTimerRunning) {
-                clearInterval(timerInterval);
-                isTimerRunning = false;
-                document.getElementById('btnTimerToggle').classList.remove('bg-rose-600');
-            } else {
-                isTimerRunning = true;
-                document.getElementById('btnTimerToggle').classList.add('bg-rose-600');
-                timerInterval = setInterval(() => {
-                    if (timerSeconds > 0) {
-                        timerSeconds--;
-                        updateTimerDisplay();
-                    } else {
-                        clearInterval(timerInterval);
-                        isTimerRunning = false;
-                        document.getElementById('btnTimerToggle').classList.remove('bg-rose-600');
-                        confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
-                    }
-                }, 1000);
-            }
-        }
-
-        function resetStepTimer() {
+          } else {
             clearInterval(timerInterval);
             isTimerRunning = false;
-            timerSeconds = stepNames[currentStep] ? stepNames[currentStep].time : 20;
-            document.getElementById('btnTimerToggle').classList.remove('bg-rose-600');
-            updateTimerDisplay();
-        }
+            document.getElementById('btnTimerToggle').innerText = 'Start';
+          }
+        }, 1000);
+      }
+    }
 
-        function updateTimerDisplay() {
-            const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
-            const secs = (timerSeconds % 60).toString().padStart(2, '0');
-            const display = document.getElementById('timerDisplay');
-            display.innerText = `${mins}:${secs}`;
+    function resetStepTimer() {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerSeconds = stepNames[currentStep].time;
+      const toggleBtn = document.getElementById('btnTimerToggle');
+      if (toggleBtn) toggleBtn.innerText = 'Start';
+      updateTimerDisplay();
+    }
 
-            if (timerSeconds <= 5 && timerSeconds > 0) {
-                display.classList.add('pulse-timer');
-            } else {
-                display.classList.remove('pulse-timer');
-            }
-        }
+    function updateTimerDisplay() {
+      const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0');
+      const secs = (timerSeconds % 60).toString().padStart(2, '0');
+      document.getElementById('timerDisplay').innerText = `${mins}:${secs}`;
+    }
 
-        function setupKeyboardNav() {
-            document.addEventListener('keydown', (e) => {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-                if (e.key === 'ArrowRight') nextStep();
-                if (e.key === 'ArrowLeft') prevStep();
-            });
-        }
-
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                if (document.exitFullscreen) document.exitFullscreen();
-            }
-        }
-    </script>
+    // KEYBOARD NAVIGATION
+    function setupKeyboardNav() {
+      document.addEventListener('keydown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        if (e.key === 'ArrowRight') nextStep();
+        if (e.key === 'ArrowLeft') prevStep();
+      });
+    }
+  </script>
 </body>
 </html>
